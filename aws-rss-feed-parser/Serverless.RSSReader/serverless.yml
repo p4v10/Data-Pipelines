@@ -10,7 +10,7 @@ provider:
 custom:
   stage: ${opt:stage, self:provider.stage}
   product: ai
-  
+
 # Lambda
 functions:
   get-feed-and-article:
@@ -34,43 +34,73 @@ resources:
         BillingMode: PAY_PER_REQUEST
         TableName: ${self:service}-${self:custom.product}-${self:custom.stage}-source
         AttributeDefinitions:
-          - AttributeName: feed_id
+          - AttributeName: feed_article_id
             AttributeType: N
-          - AttributeName: date_added
+          - AttributeName: feed_article_published_date
             AttributeType: S
-          - AttributeName: feed_title
+          - AttributeName: feed_article_title
             AttributeType: S
-          - AttributeName: feed_subtitle
+          - AttributeName: feed_article_summary
             AttributeType: S
-          - AttributeName: feed_url
+          - AttributeName: feed_article_link
+            AttributeType: S
+          - AttributeName: feed_article_author
+            AttributeType: S
+          - AttributeName: rss_feed_title
+            AttributeType: S
+          - AttributeName: rss_feed_link
             AttributeType: S
         KeySchema:
-          - AttributeName: feed_id
+          - AttributeName: feed_article_id
             KeyType: HASH
-          - AttributeName: date_added
+          - AttributeName: feed_article_published_date
             KeyType: RANGE
         GlobalSecondaryIndexes:
-        - IndexName: feed_title
+        - IndexName: FeedArticleTitleIndex
           KeySchema:
-          - AttributeName: feed_title
+          - AttributeName: feed_article_title
             KeyType: HASH
-          - AttributeName: date_added
+          - AttributeName: feed_article_published_date
             KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: feed_subtitle
+        - IndexName: ArticleSummaryIndex
           KeySchema:
-          - AttributeName: feed_subtitle
+          - AttributeName: feed_article_summary
             KeyType: HASH
-          - AttributeName: date_added
+          - AttributeName: feed_article_published_date
             KeyType: RANGE
           Projection:
             ProjectionType: ALL
-        - IndexName: feed_url
+        - IndexName: ArticleLinkIndex
           KeySchema:
-          - AttributeName: feed_url
+          - AttributeName: feed_article_link
             KeyType: HASH
-          - AttributeName: date_added
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ArticleAuthorIndex
+          KeySchema:
+          - AttributeName: feed_article_author
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RSSFeedTitleIndex
+          KeySchema:
+          - AttributeName: rss_feed_title
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RSSFeedLinkIndex
+          KeySchema:
+          - AttributeName: rss_feed_link
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
             KeyType: RANGE
           Projection:
             ProjectionType: ALL

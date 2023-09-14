@@ -1,3 +1,4 @@
+from datetime import datetime
 import json
 import feedparser
 import re
@@ -27,10 +28,15 @@ def get_feed_info_and_articles(parsed):
     entries = parsed['entries']
     
     for entry in entries:
+        # Convert published_parsed to a valid date format
+        date_list = entry['published_parsed'][:6]  # Extract the first 6 elements
+        date_obj = datetime(*date_list)  # Convert to datetime
+        formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")  # Format the date
+
         article = {
             'feed_article_id': entry['id'],
             'feed_article_link': entry['link'],
-            'feed_article_published_date': entry['published_parsed'],
+            'feed_article_published_date': formatted_date,
             'feed_article_title': entry['title'],
             'feed_article_author': entry['author_detail']['name'],
             'feed_article_summary': remove_html_tags(entry['summary'])
@@ -44,4 +50,3 @@ def get_feed_info_and_articles(parsed):
 def remove_html_tags(text):
     clean = re.compile('<.*?>')
     return re.sub(clean, '', text)
-
