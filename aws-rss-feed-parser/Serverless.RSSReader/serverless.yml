@@ -30,13 +30,13 @@ functions:
 
   # This function scrapes the article body from the RSS feed link
   scrape-article-body:
-    handler: Lambdas/feed-parser-lambda-package/lambda-get-feed.lambda_handler
+    handler: Lambdas/scrape-articles-body-package/lambda-scrape-article.lambda_handler
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-scrape-articles-body
     description: Lambda that scrapes Articles body from the news website using RSS Feed Link
     # Specify the path to your Lambda function code
     package:
       include:
-        - Lambdas/feed-parser-lambda-package/
+        - Lambdas/scrape-articles-body-package/
         - requirements.txt
     environment:  # Add any environment variables here if needed
       VARIABLE_NAME: variable_value
