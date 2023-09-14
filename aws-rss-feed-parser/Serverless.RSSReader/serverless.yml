@@ -13,14 +13,30 @@ custom:
 
 # Lambda
 functions:
+
+  # Function that gets initial RSS feed data
   get-feed-and-article:
-    handler: Lambdas/feed_parser_lambda_package/lambda-get-feed.lambda_handler
+    handler: Lambdas/feed-parser-lambda-package/lambda-get-feed.lambda_handler
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-feed-articles
     description: Lambda to pull RSS data
     # Specify the path to your Lambda function code
     package:
       include:
-        - Lambdas/feed_parser_lambda_package/
+        - Lambdas/feed-parser-lambda-package/
+        - requirements.txt
+    environment:  # Add any environment variables here if needed
+      VARIABLE_NAME: variable_value
+    timeout: 60
+
+  # This function scrapes the article body from the RSS feed link
+  scrape-article-body:
+    handler: Lambdas/feed-parser-lambda-package/lambda-get-feed.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-scrape-articles-body
+    description: Lambda that scrapes Articles body from the news website using RSS Feed Link
+    # Specify the path to your Lambda function code
+    package:
+      include:
+        - Lambdas/feed-parser-lambda-package/
         - requirements.txt
     environment:  # Add any environment variables here if needed
       VARIABLE_NAME: variable_value
