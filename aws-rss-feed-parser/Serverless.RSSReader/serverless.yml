@@ -1,0 +1,79 @@
+service: rss
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  stage: dev
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  product: ai
+  
+# Lambda
+functions:
+  get-feed-and-article:
+    handler: Lambdas/feed_parser_lambda_package/lambda-get-feed.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-feed-articles
+    description: Lambda to pull RSS data
+    # Specify the path to your Lambda function code
+    package:
+      include:
+        - Lambdas/feed_parser_lambda_package/
+        - requirements.txt
+    environment:  # Add any environment variables here if needed
+      VARIABLE_NAME: variable_value
+    timeout: 60
+
+resources:
+  Resources:
+    RssFeedSourceTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:service}-${self:custom.product}-${self:custom.stage}-source
+        AttributeDefinitions:
+          - AttributeName: feed_id
+            AttributeType: N
+          - AttributeName: date_added
+            AttributeType: S
+          - AttributeName: feed_title
+            AttributeType: S
+          - AttributeName: feed_subtitle
+            AttributeType: S
+          - AttributeName: feed_url
+            AttributeType: S
+        KeySchema:
+          - AttributeName: feed_id
+            KeyType: HASH
+          - AttributeName: date_added
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+        - IndexName: feed_title
+          KeySchema:
+          - AttributeName: feed_title
+            KeyType: HASH
+          - AttributeName: date_added
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: feed_subtitle
+          KeySchema:
+          - AttributeName: feed_subtitle
+            KeyType: HASH
+          - AttributeName: date_added
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: feed_url
+          KeySchema:
+          - AttributeName: feed_url
+            KeyType: HASH
+          - AttributeName: date_added
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+plugins:
+  - serverless-python-requirements  # Plugin to bundle Python dependencies
