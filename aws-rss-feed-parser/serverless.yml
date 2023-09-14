@@ -18,3 +18,29 @@ functions:
 
 plugins:
   - serverless-python-requirements  # Plugin to bundle Python dependencies
+
+resources:
+  Resources:
+    RssFeedSourceTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        TableName: RSS_Feed_Source # Replace with your desired table name
+        AttributeDefinitions:
+          - AttributeName: feed_id
+            AttributeType: N
+          - AttributeName: feed_title
+            AttributeType: S # S for String
+          - AttributeName: feed_subtitle
+            AttributeType: S
+          - AttributeName: feed_url
+            AttributeType: S
+          - AttributeName: date_added
+            AttributeType: S # Change the type to 'N' if date_added is a number
+        KeySchema:
+          - AttributeName: feed_id
+            KeyType: HASH
+          - AttributeName: feed_title
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
