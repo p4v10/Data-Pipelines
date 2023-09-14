@@ -1,0 +1,20 @@
+service: rss-feed-reader
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+
+functions:
+  get-feed-and-article:
+    handler: lambda-get-feed.lambda_handler
+    # Specify the path to your Lambda function code
+    package:
+      include:
+        - feed_parser_lambda_package/lambda-get-feed.py
+        - requirements.txt  # Include the requirements.txt file
+    environment:  # Add any environment variables here if needed
+      VARIABLE_NAME: variable_value
+
+plugins:
+  - serverless-python-requirements  # Plugin to bundle Python dependencies
