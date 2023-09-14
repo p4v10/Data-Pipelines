@@ -4,6 +4,11 @@ frameworkVersion: '3'
 provider:
   name: aws
   runtime: python3.11
+  region: us-east-1
+  stage: dev
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
 
 functions:
   get-feed-and-article:
@@ -24,22 +29,16 @@ resources:
     RssFeedSourceTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:
-        TableName: RSS_Feed_Source # Replace with your desired table name
+        TableName: ${self:service}-source-db-${self:custom.stage}
         AttributeDefinitions:
           - AttributeName: feed_id
             AttributeType: N
-          - AttributeName: feed_title
-            AttributeType: S # S for String
-          - AttributeName: feed_subtitle
-            AttributeType: S
-          - AttributeName: feed_url
-            AttributeType: S
           - AttributeName: date_added
-            AttributeType: S # Change the type to 'N' if date_added is a number
+            AttributeType: S
         KeySchema:
           - AttributeName: feed_id
             KeyType: HASH
-          - AttributeName: feed_title
+          - AttributeName: date_added
             KeyType: RANGE
         ProvisionedThroughput:
           ReadCapacityUnits: 5
