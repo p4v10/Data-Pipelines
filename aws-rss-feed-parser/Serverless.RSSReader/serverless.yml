@@ -137,6 +137,7 @@ resources:
           Projection:
             ProjectionType: ALL
 
+
 # Lambdas
 functions:
   # Function that gets initial RSS feed data
@@ -152,6 +153,10 @@ functions:
       VARIABLE_NAME: variable_value
     timeout: 60
     role: LambdaDynamoDBRole
+    events:
+      - eventBridge:
+          schedule: rate(1 hour)
+          
   # This function scrapes the article body from the RSS feed link
   scrape-article-body:
     handler: Lambdas/scrape-articles-body-package/lambda-scrape-article.lambda_handler
