@@ -38,6 +38,16 @@ resources:
                     - dynamodb:Query
                     - dynamodb:PutItem
                   Resource: ${self:custom.dynamoDB_arn}
+          - PolicyName: LambdaCloudWatchLogsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: '*'
 
     # DynamoDB Table for the RSS Feed
     RssFeedSourceTable:
