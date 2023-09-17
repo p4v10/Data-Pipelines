@@ -2,6 +2,7 @@ from datetime import datetime
 import json
 import feedparser
 import re
+import os
 import boto3
 import uuid
 import logging
@@ -16,7 +17,7 @@ logger.info("-----Start Loggining-----")
 dynamoDB = boto3.client('dynamodb')
 
 # Define the DynamoDB table name
-table_name = 'rss-ai-dev-source'
+table_name = os.environ.get('DYNAMODB_TABLE_NAME')
 
 def lambda_handler(event, context):
     # Parse the RSS feed from 'https://cointelegraph.com/rss'

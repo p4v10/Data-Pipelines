@@ -1,7 +1,19 @@
 import boto3
 import json
+import os
+import logging
+
+# Initialize logger
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+logger.info("-----Start Loggining-----")
 
 def lambda_handler(event, context):
+
+    # Get step function arn
+    step_function_arn = os.environ.get('STEP_FUNCTION_ARN')
+
     # Initialize the Step Functions client
     stepfunctions = boto3.client('stepfunctions', region_name='us-east-1')
 
@@ -11,12 +23,12 @@ def lambda_handler(event, context):
     try:
         # Trigger the Step Function execution
         response = stepfunctions.start_execution(
-            stateMachineArn='arn:aws:states:us-east-1:xxxxxxx:iam_role',
+            stateMachineArn = step_function_arn,
             input=json.dumps(input_dict)
         )
 
         # Log the response for tracking
-        print(f'Started Step Function execution: {response["executionArn"]}')
+        logger.info(f'Started Step Function execution: {response["executionArn"]}')
 
         # You can return any response you want here
         return {
@@ -24,7 +36,7 @@ def lambda_handler(event, context):
             'body': 'Step Function execution started successfully.'
         }
     except Exception as e:
-        print(f'Error starting Step Function execution: {str(e)}')
+        logger.info(f'Error starting Step Function execution: {str(e)}')
         return {
             'statusCode': 500,
             'body': 'Error starting Step Function execution.'

@@ -11,7 +11,23 @@ provider:
 custom:
   stage: ${opt:stage, self:provider.stage}
   product: ai
-  dynamoDB_arn: "arn:aws:dynamodb:us-east-1:535354162768:table/rss-ai-dev-source"
+
+  # DynamoDB variables
+  dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-source
+  dynamoDB_arn:
+    Fn::GetAtt:
+      - RssFeedSourceTable
+      - Arn
+  
+  # Step Function variables
+  rss_pipeline_step_function_arn: 
+    Fn::GetAtt:
+      - RSSPipeline
+      - Arn
+  rss_pipeline_step_function_name: 
+    Fn::GetAtt:
+      - RSSPipeline
+      - Name
 
 # Resources
 resources:
@@ -48,13 +64,22 @@ resources:
                     - logs:CreateLogStream
                     - logs:PutLogEvents
                   Resource: '*'
+          - PolicyName: LambdaExecutionPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - states:StartExecution
+                  # Add the Step Function resource here
+                  Resource: '*'
 
     # DynamoDB Table for the RSS Feed
     RssFeedSourceTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:service}-${self:custom.product}-${self:custom.stage}-source
+        TableName: ${self:service}-${self:custom.product}-${self:custom.dynamoDB_name}
         AttributeDefinitions:
           - AttributeName: feed_article_id
             AttributeType: S
@@ -147,6 +172,21 @@ resources:
           Projection:
             ProjectionType: ALL
 
+# Step Function definition
+stepFunctions:
+  stateMachines:
+    RSSPipeline:
+      id: RSSPipeline  # Define a unique logical ID
+      name: ${self:service}-${self:custom.product}-${self:custom.stage}-run-rss-pipeline
+      definition:
+        Comment: "Step-Function that runs the RSS Pipeline"
+        StartAt: GetRSSFeedsData
+        States:
+          GetRSSFeedsData:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [get-feed-and-article, Arn]
+            End: true
 
 # Lambdas
 functions:
@@ -156,44 +196,24 @@ functions:
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-invoke-stepfunction
     description: Lambda to invoke RSS Step-Function Pipeline
     environment:
-      VARIABLE_NAME: variable_value
+      STEP_FUNCTION_ARN: ${self:custom.rss_pipeline_step_function_arn}
     timeout: 60
-    # role: LambdaDynamoDBRole
-    # events:
-    #   - eventBridge:
-    #       schedule: rate(1 hour)
+    events:
+      - schedule: rate(3 hours)
+    role: LambdaDynamoDBRole
   # Function that gets initial RSS feed data
   get-feed-and-article:
     handler: Lambdas/feed-parser-lambda-package/lambda-get-feed.lambda_handler
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-feed-articles
     description: Lambda to pull RSS data
+    environment:
+      DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
     package:
       include:
         - Lambdas/feed-parser-lambda-package/
         - requirements.txt
-    environment:
-      VARIABLE_NAME: variable_value
     timeout: 60
     role: LambdaDynamoDBRole
-    events:
-      - eventBridge:
-          schedule: rate(1 hour)
-
-# Step Function definition
-stepFunctions:
-  stateMachines:
-    RSSPipeline:
-      definition:
-        Comment: "Step-Function that runs the RSS Pipeline"
-        StartAt: GetFeedAndArticleState
-        States:
-          GetFeedAndArticleState:
-            Type: Task
-            Resource:
-              Fn::GetAtt:
-                - get-feed-and-article
-                - Arn
-            End: true
 
 # Plugins
 plugins:
