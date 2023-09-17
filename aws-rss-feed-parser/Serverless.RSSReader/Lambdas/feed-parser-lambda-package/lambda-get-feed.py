@@ -7,32 +7,32 @@ import boto3
 import uuid
 import logging
 
-# Initialize logger
+# initialize logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 logger.info("-----Start Loggining-----")
 
-# DynamoDB Client
+# dynamoDB Client
 dynamoDB = boto3.client('dynamodb')
 
-# Define the DynamoDB table name
+# define the DynamoDB table name
 table_name = os.environ.get('DYNAMODB_TABLE_NAME')
 
 def lambda_handler(event, context):
-    # Parse the RSS feed from the list below
+    # parse the RSS feed from the list below
     links = ['https://cointelegraph.com/rss', 'https://www.coindesk.com/arc/outboundfeeds/rss']
     
-    all_articles = []  # Initialize a list to store all articles
+    all_articles = []
     
     for link in links:
         parsed = feedparser.parse(link)
         
-        # Extract feed information and articles from the parsed feed
+        # extract feed information and articles from the parsed feed
         articles = get_feed_info_and_articles(parsed)
         all_articles.extend(articles)
     
-    # Write each article to DynamoDB
+    # write each article to DynamoDB
     for article in all_articles:
         # check if article already was written to the DynamoDB
         if not article_exists(article['feed_article_id']):
@@ -40,7 +40,7 @@ def lambda_handler(event, context):
             article['date_added'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Current date and time
             write_article_to_dynamoDB(article)
     
-    # Create a response dictionary with a 200 status code and JSON body
+    # create a response dictionary with a 200 status code and JSON body
     response = {
         "statusCode": 200,
         "body": json.dumps({
@@ -51,7 +51,7 @@ def lambda_handler(event, context):
     return response
 
 def article_exists(article_id):
-    # Check if the article with the given ID exists in the DynamoDB table
+    # check if the article with the given ID exists in the DynamoDB table
     response = dynamoDB.query(
         TableName=table_name,
         KeyConditionExpression='feed_article_id = :id',
@@ -63,7 +63,7 @@ def article_exists(article_id):
 
 def write_article_to_dynamoDB(article):
     try:
-        # Write the article to the DynamoDB table
+        # write the article to the DynamoDB table
         dynamoDB.put_item(
             TableName=table_name,
             Item={
@@ -86,7 +86,7 @@ def write_article_to_dynamoDB(article):
 # Function that gets the Feed Information and Single article
 # It extracts all the necessary information needed to write the data into DynamoDB
 def get_feed_info_and_articles(parsed):
-    # Extract information from the feed header
+    # extract information from the feed header
     feed = parsed['feed']
     feed_info = {
         'rss_feed_title': feed['title'],
@@ -96,16 +96,17 @@ def get_feed_info_and_articles(parsed):
 
     logger.info(f'Example feed info: {feed_info}')
     
-    articles = []  # Initialize an empty list to store article data
-    entries = parsed['entries']  # Get the list of entries from the feed
+    articles = []
+    # get the list of entries from the feed
+    entries = parsed['entries']
     
     for entry in entries:
-        # Convert published_parsed to a valid date format
-        date_list = entry['published_parsed'][:6]  # Extract the first 6 elements
-        date_obj = datetime(*date_list)  # Convert to datetime
-        formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")  # Format the date
+        # convert published_parsed to a valid date format
+        date_list = entry['published_parsed'][:6]
+        date_obj = datetime(*date_list)
+        formatted_date = date_obj.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Create a dictionary for each article with relevant information
+        # create a dictionary for each article with relevant information
         article = {
             'feed_article_id': entry['id'],
             'feed_article_link': entry['link'],
@@ -115,10 +116,10 @@ def get_feed_info_and_articles(parsed):
             'feed_article_summary': remove_html_tags(entry['summary'])
         }
         
-        # Merge the feed_info and article dictionaries
+        # merge the feed_info and article dictionaries
         article.update(feed_info)
         
-        # Add the article dictionary to the list of articles
+        # add the article dictionary to the list of articles
         articles.append(article)
         
     logger.info(f'Example record: {articles[0]}')
@@ -127,5 +128,5 @@ def get_feed_info_and_articles(parsed):
 
 # Function to remove HTML tags from a given text
 def remove_html_tags(text):
-    clean = re.compile('<.*?>')  # Define a regular expression pattern for HTML tags
-    return re.sub(clean, '', text)  # Use re.sub to replace HTML tags with an empty string
+    clean = re.compile('<.*?>')
+    return re.sub(clean, '', text)

@@ -3,7 +3,7 @@ import json
 import os
 import logging
 
-# Initialize logger
+# initialize logger
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
@@ -11,26 +11,26 @@ logger.info("-----Start Loggining-----")
 
 def lambda_handler(event, context):
 
-    # Get step function arn
+    # get step function arn
     step_function_arn = os.environ.get('STEP_FUNCTION_ARN')
 
-    # Initialize the Step Functions client
+    # initialize the Step Functions client
     stepfunctions = boto3.client('stepfunctions', region_name='us-east-1')
 
-    # Define your input dictionary
+    # define your input dictionary
     input_dict = {'key': 'value'}
 
     try:
-        # Trigger the Step Function execution
+        # trigger the Step Function execution
         response = stepfunctions.start_execution(
             stateMachineArn = step_function_arn,
             input=json.dumps(input_dict)
         )
 
-        # Log the response for tracking
+        # log the response for tracking
         logger.info(f'Started Step Function execution: {response["executionArn"]}')
 
-        # You can return any response you want here
+        # you can return any response you want here
         return {
             'statusCode': 200,
             'body': 'Step Function execution started successfully.'
