@@ -199,7 +199,7 @@ functions:
       STEP_FUNCTION_ARN: ${self:custom.rss_pipeline_step_function_arn}
     timeout: 60
     events:
-      - schedule: rate(3 hours)
+      - schedule: rate(4 hours)
     role: LambdaDynamoDBRole
   # Function that gets initial RSS feed data
   get-feed-and-article:

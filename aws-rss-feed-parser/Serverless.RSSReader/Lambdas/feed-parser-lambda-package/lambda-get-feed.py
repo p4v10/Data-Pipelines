@@ -20,14 +20,20 @@ dynamoDB = boto3.client('dynamodb')
 table_name = os.environ.get('DYNAMODB_TABLE_NAME')
 
 def lambda_handler(event, context):
-    # Parse the RSS feed from 'https://cointelegraph.com/rss'
-    parsed = feedparser.parse('https://cointelegraph.com/rss')
+    # Parse the RSS feed from the list below
+    links = ['https://cointelegraph.com/rss', 'https://www.coindesk.com/arc/outboundfeeds/rss']
     
-    # Extract feed information and articles from the parsed feed
-    articles = get_feed_info_and_articles(parsed)
+    all_articles = []  # Initialize a list to store all articles
+    
+    for link in links:
+        parsed = feedparser.parse(link)
+        
+        # Extract feed information and articles from the parsed feed
+        articles = get_feed_info_and_articles(parsed)
+        all_articles.extend(articles)
     
     # Write each article to DynamoDB
-    for article in articles:
+    for article in all_articles:
         # check if article already was written to the DynamoDB
         if not article_exists(article['feed_article_id']):
             article['unique_id'] = str(uuid.uuid4())  # Generate a unique ID
@@ -38,7 +44,7 @@ def lambda_handler(event, context):
     response = {
         "statusCode": 200,
         "body": json.dumps({
-            "articles": articles
+            "articles": all_articles
         })
     }
     
