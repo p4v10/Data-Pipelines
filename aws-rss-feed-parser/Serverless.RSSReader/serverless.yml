@@ -179,6 +179,22 @@ functions:
     #   - eventBridge:
     #       schedule: rate(1 hour)
 
+# Step Function definition
+stepFunctions:
+  stateMachines:
+    RSSPipeline:
+      definition:
+        Comment: "Step-Function that runs the RSS Pipeline"
+        StartAt: GetFeedAndArticleState
+        States:
+          GetFeedAndArticleState:
+            Type: Task
+            Resource:
+              Fn::GetAtt:
+                - get-feed-and-article
+                - Arn
+            End: true
+
 # Plugins
 plugins:
   - serverless-python-requirements
