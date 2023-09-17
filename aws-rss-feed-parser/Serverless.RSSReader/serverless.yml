@@ -1,4 +1,4 @@
-service: rss
+service: rss-parser
 frameworkVersion: '3'
 
 provider:
@@ -150,6 +150,18 @@ resources:
 
 # Lambdas
 functions:
+  # Invokes Step-Function Pipeline
+  invoke-step-function-lambda:
+    handler: Lambdas/invoke-step-function-lambda/lambda-invoke-step-function.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-invoke-stepfunction
+    description: Lambda to invoke RSS Step-Function Pipeline
+    environment:
+      VARIABLE_NAME: variable_value
+    timeout: 60
+    # role: LambdaDynamoDBRole
+    # events:
+    #   - eventBridge:
+    #       schedule: rate(1 hour)
   # Function that gets initial RSS feed data
   get-feed-and-article:
     handler: Lambdas/feed-parser-lambda-package/lambda-get-feed.lambda_handler
@@ -166,18 +178,6 @@ functions:
     events:
       - eventBridge:
           schedule: rate(1 hour)
-  # Invokes Step-Function Pipeline
-  invoke-step-function-lambda:
-    handler: Lambdas/invoke-step-function-lambda/lambda-invoke-step-function.lambda_handler
-    name: ${self:service}-${self:custom.product}-${self:custom.stage}-invoke-stepfunction
-    description: Lambda to pull RSS data
-    environment:
-      VARIABLE_NAME: variable_value
-    timeout: 60
-    # role: LambdaDynamoDBRole
-    # events:
-    #   - eventBridge:
-    #       schedule: rate(1 hour)
 
 # Step Function definition
 stepFunctions:
