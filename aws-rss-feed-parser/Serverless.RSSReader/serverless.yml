@@ -1,4 +1,4 @@
-service: rss-parser
+service: p4
 frameworkVersion: '3'
 
 provider:
@@ -7,32 +7,23 @@ provider:
   region: us-east-1
   stage: dev
 
-# custome variables
 custom:
   stage: ${opt:stage, self:provider.stage}
-  product: ai
-
+  product: crypto-rss-feed
   # DynamoDB variables
-  dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-source
+  dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-rss-feed-source
   dynamoDB_arn:
-    Fn::GetAtt:
-      - RssFeedSourceTable
-      - Arn  # Accessing the Arn of the RssFeedSourceTable resource
-
+    Fn::GetAtt: [RssFeedSourceTable, Arn]
   # Step Function variables
   rss_pipeline_step_function_arn: 
-    Fn::GetAtt:
-      - RSSPipeline
-      - Arn
+    Fn::GetAtt: [RSSPipeline, Arn]
   rss_pipeline_step_function_name: 
-    Fn::GetAtt:
-      - RSSPipeline
-      - Name
+    Fn::GetAtt: [RSSPipeline, Name]
 
 # Resources
 resources:
   Resources:
-    # IAM Role for Lambda to Write to DynamoDB
+    # IAM Role for Lambdas
     LambdaDynamoDBRole:
       Type: 'AWS::IAM::Role'
       Properties:
@@ -71,10 +62,9 @@ resources:
                 - Effect: Allow
                   Action:
                     - states:StartExecution
-                  # Add the Step Function resource here
                   Resource: '*'
 
-    # DynamoDB Table for the RSS Feed
+    # DynamoDB Table for Raw RSS Feed
     RssFeedSourceTable:
       Type: 'AWS::DynamoDB::Table'
       Properties:
@@ -172,12 +162,12 @@ resources:
           Projection:
             ProjectionType: ALL
 
-# Step Function definition
+# Step Function
 stepFunctions:
   stateMachines:
     RSSPipeline:
-      id: RSSPipeline  # Define a unique logical ID
-      name: ${self:service}-${self:custom.product}-${self:custom.stage}-run-rss-pipeline
+      id: RSSPipeline
+      name: ${self:service}-${self:custom.product}-${self:custom.stage}-pull-and-parse-feed
       definition:
         Comment: "Step-Function that runs the RSS Pipeline"
         StartAt: GetRSSFeedsData
@@ -201,10 +191,10 @@ functions:
     events:
       - schedule: rate(4 hours)
     role: LambdaDynamoDBRole
-  # Function that gets initial RSS feed data
+  # Pulls RSS Data
   get-feed-and-article:
     handler: Lambdas/feed-parser-lambda-package/lambda-get-feed.lambda_handler
-    name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-feed-articles
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-feed-news
     description: Lambda to pull RSS data
     environment:
       DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
