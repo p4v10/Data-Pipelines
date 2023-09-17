@@ -176,6 +176,11 @@ stepFunctions:
             Type: Task
             Resource:
               Fn::GetAtt: [get-feed-and-article, Arn]
+            Next: ScrapeArticleData
+          ScrapeArticleData:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [get-feed-and-article, Arn]
             End: true
 
 # Lambdas
