@@ -17,8 +17,8 @@ custom:
   dynamoDB_arn:
     Fn::GetAtt:
       - RssFeedSourceTable
-      - Arn
-  
+      - Arn  # Accessing the Arn of the RssFeedSourceTable resource
+
   # Step Function variables
   rss_pipeline_step_function_arn: 
     Fn::GetAtt:
@@ -53,7 +53,7 @@ resources:
                   Action:
                     - dynamodb:Query
                     - dynamodb:PutItem
-                  Resource: ${self:custom.dynamoDB_arn}
+                  Resource: '*'
           - PolicyName: LambdaCloudWatchLogsPolicy
             PolicyDocument:
               Version: '2012-10-17'
@@ -79,7 +79,7 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:service}-${self:custom.product}-${self:custom.dynamoDB_name}
+        TableName: ${self:custom.dynamoDB_name}
         AttributeDefinitions:
           - AttributeName: feed_article_id
             AttributeType: S
