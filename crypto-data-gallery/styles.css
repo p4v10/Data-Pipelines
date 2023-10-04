@@ -1,0 +1,147 @@
+body {
+    height: 300vh;
+    margin: 0;
+    background-color: #F6F6F3;
+    position: relative;
+    font-family: "Century Gothic", CenturyGothic, Geneva, AppleGothic, sans-serif;
+}
+
+.star {
+    position: absolute;
+    background-color: black;
+    animation: fall linear infinite;
+    z-index: 0;
+}
+
+@keyframes fall {
+    0% {
+        top: -5px;
+    }
+    100% {
+        top: 300vh;
+    }
+}
+
+@keyframes title-coming {
+    0% {
+        transform: scale(0) translateY(-300vh);
+        opacity: 0;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slide-in {
+    0% {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+
+.main_title {
+    text-align: center;
+    color: black;
+    animation: title-coming 2.25s ease-out forwards;
+    font-family: "Century Gothic", CenturyGothic, Geneva, AppleGothic, sans-serif;
+    font-size: 2.5em;
+    text-shadow: 0.5px 0.5px 1px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.chart_wrapper {
+    width: 850px;
+    height: 400px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.chart_section {
+    background-color: white;
+    width: 1000px;
+    position: relative;
+    display: flex;
+    border-radius: 0% 0% 0% 0% / 0% 0% 0% 0% ;
+    color: white;
+    box-shadow: 10px 10px rgba(0,0,0,.15);
+    transition: all .4s ease;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2em; /* Add some space between each section */
+    border: 1px solid black;
+    margin-left: auto;
+    margin-right: auto;
+    z-index: 1;
+    opacity: 0;  /* Start with 0 opacity */
+    animation: slide-in 1s ease forwards 1s;
+}
+.chart_section:hover {
+    border-radius: 0% 0% 50% 50% / 0% 0% 0% 0%;
+    box-shadow: 20px 20px rgba(0, 0, 0, .25);
+}
+
+.chart_description {
+    flex-basis: 35%;
+    margin-left: 10px;
+    margin-top: 30px;
+    text-align: left;
+    color: black;
+    font-family: "Century Gothic", CenturyGothic, Geneva, AppleGothic, sans-serif;
+}
+
+.chart_description h1 {
+    font-size: 12px;
+}
+
+.description {
+    margin-top: 30px;
+    font-size: 16px;
+}
+
+.created_text {
+  font-size: 10px;
+}
+
+.chart_links {
+    flex-basis: 30%;
+    font-size: 10px;
+    text-align: left;
+    display: flex;
+    margin-top: 20px;
+}
+
+.reload-button {
+  background-color: white;
+  border: 1px double black;
+  padding: 8px 16px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: black;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.reload-button:hover {
+  background-color: black;
+  color: white;
+}
+
+.reload-button:focus {
+  outline: none;
+}
+
+.reload-button:active {
+  background-color: #f5b40f;
+  color: white;
+}
