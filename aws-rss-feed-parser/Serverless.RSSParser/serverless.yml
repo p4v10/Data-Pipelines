@@ -1,4 +1,4 @@
-service: rss-parser
+service: ai
 frameworkVersion: '3'
 
 provider:
@@ -9,7 +9,7 @@ provider:
 
 custom:
   stage: ${opt:stage, self:provider.stage}
-  product: crypto-rss-feed
+  product: rss-parser
   # DynamoDB variables
   dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-rss-feed-source
   dynamoDB_arn:
@@ -211,14 +211,15 @@ functions:
     role: LambdaDynamoDBRole
   # Extract Article Body
   get-article-body:
-    handler: Lambdas/article-body-scrape-lambda/lambda-get-article-body.lambda_handler
+    handler: Lambdas/article-info-extract-lambda/lambda-get-article-body.lambda_handler
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-article-body
+    runtime: python3.11
     description: Lambda to pull RSS data
     environment:
       DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
     package:
       include:
-        - Lambdas/article-body-scrape-lambda/
+        - Lambdas/article-info-extract-lambda/
         - requirements.txt
     timeout: 60
     role: LambdaDynamoDBRole

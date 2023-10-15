@@ -1,5 +1,0 @@
-Requirement already satisfied: botocore in /Users/pavlotsiselskyi/anaconda3/lib/python3.11/site-packages (1.29.76)
-Requirement already satisfied: jmespath<2.0.0,>=0.7.1 in /Users/pavlotsiselskyi/anaconda3/lib/python3.11/site-packages (from botocore) (0.10.0)
-Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in /Users/pavlotsiselskyi/anaconda3/lib/python3.11/site-packages (from botocore) (2.8.2)
-Requirement already satisfied: urllib3<1.27,>=1.25.4 in /Users/pavlotsiselskyi/anaconda3/lib/python3.11/site-packages (from botocore) (1.26.16)
-Requirement already satisfied: six>=1.5 in /Users/pavlotsiselskyi/anaconda3/lib/python3.11/site-packages (from python-dateutil<3.0.0,>=2.1->botocore) (1.16.0)
