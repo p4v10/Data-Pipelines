@@ -1,0 +1,229 @@
+service: rss-parser
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  stage: dev
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  product: crypto-rss-feed
+  # DynamoDB variables
+  dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-rss-feed-source
+  dynamoDB_arn:
+    Fn::GetAtt: [RssFeedSourceTable, Arn]
+  # Step Function variables
+  rss_pipeline_step_function_arn: 
+    Fn::GetAtt: [RSSPipeline, Arn]
+  rss_pipeline_step_function_name: 
+    Fn::GetAtt: [RSSPipeline, Name]
+
+# Resources
+resources:
+  Resources:
+    # IAM Role for Lambdas
+    LambdaDynamoDBRole:
+      Type: 'AWS::IAM::Role'
+      Properties:
+        RoleName: ${self:service}-${self:custom.product}-${self:custom.stage}-role
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service: lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: LambdaDynamoDBPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - dynamodb:Query
+                    - dynamodb:PutItem
+                  Resource: '*'
+          - PolicyName: LambdaCloudWatchLogsPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: '*'
+          - PolicyName: LambdaExecutionPolicy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - states:StartExecution
+                  Resource: '*'
+
+    # DynamoDB Table for Raw RSS Feed
+    RssFeedSourceTable:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.dynamoDB_name}
+        AttributeDefinitions:
+          - AttributeName: feed_article_id
+            AttributeType: S
+          - AttributeName: feed_article_published_date
+            AttributeType: S
+          - AttributeName: feed_article_title
+            AttributeType: S
+          - AttributeName: feed_article_summary
+            AttributeType: S
+          - AttributeName: feed_article_link
+            AttributeType: S
+          - AttributeName: feed_article_author
+            AttributeType: S
+          - AttributeName: rss_feed_title
+            AttributeType: S
+          - AttributeName: rss_feed_link
+            AttributeType: S
+          - AttributeName: date_added
+            AttributeType: S
+          - AttributeName: unique_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: feed_article_id
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+        GlobalSecondaryIndexes:
+        - IndexName: FeedArticleTitleIndex
+          KeySchema:
+          - AttributeName: feed_article_title
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ArticleSummaryIndex
+          KeySchema:
+          - AttributeName: feed_article_summary
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ArticleLinkIndex
+          KeySchema:
+          - AttributeName: feed_article_link
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: ArticleAuthorIndex
+          KeySchema:
+          - AttributeName: feed_article_author
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RSSFeedTitleIndex
+          KeySchema:
+          - AttributeName: rss_feed_title
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: RSSFeedLinkIndex
+          KeySchema:
+          - AttributeName: rss_feed_link
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: DateAdded
+          KeySchema:
+          - AttributeName: date_added
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+        - IndexName: UniqueID
+          KeySchema:
+          - AttributeName: unique_id
+            KeyType: HASH
+          - AttributeName: feed_article_published_date
+            KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+# Step Function
+stepFunctions:
+  stateMachines:
+    RSSPipeline:
+      id: RSSPipeline
+      name: ${self:service}-${self:custom.product}-${self:custom.stage}-pull-and-parse-rssfeeds
+      definition:
+        Comment: "Step-Function that runs the RSS Pipeline"
+        StartAt: GetRSSFeedsData
+        States:
+          GetRSSFeedsData:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [get-feed-and-article, Arn]
+            Next: ScrapeArticleData
+          ScrapeArticleData:
+            Type: Task
+            Resource:
+              Fn::GetAtt: [get-feed-and-article, Arn]
+            End: true
+
+# Lambdas
+functions:
+  # Invokes Step-Function Pipeline
+  invoke-step-function-lambda:
+    handler: Lambdas/invoke-step-function-lambda/lambda-invoke-step-function.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-invoke-stepfunction
+    description: Lambda to invoke RSS Step-Function Pipeline
+    environment:
+      STEP_FUNCTION_ARN: ${self:custom.rss_pipeline_step_function_arn}
+    timeout: 60
+    events:
+      - schedule: rate(24 hours)
+    role: LambdaDynamoDBRole
+  # Pulls RSS Data
+  get-feed-and-article:
+    handler: Lambdas/rss-feed-parse-lambda/lambda-get-feed.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-rss-feed
+    description: Lambda to pull RSS data
+    environment:
+      DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
+    package:
+      include:
+        - Lambdas/rss-feed-parse-lambda/
+        - requirements.txt
+    timeout: 60
+    role: LambdaDynamoDBRole
+  # Extract Article Body
+  get-article-body:
+    handler: Lambdas/article-body-scrape-lambda/lambda-get-article-body.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-article-body
+    description: Lambda to pull RSS data
+    environment:
+      DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
+    package:
+      include:
+        - Lambdas/article-body-scrape-lambda/
+        - requirements.txt
+    timeout: 60
+    role: LambdaDynamoDBRole
+
+# Plugins
+plugins:
+  - serverless-python-requirements
+  - serverless-step-functions
