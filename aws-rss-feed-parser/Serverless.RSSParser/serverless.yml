@@ -1,4 +1,4 @@
-service: ai
+service: rss
 frameworkVersion: '3'
 
 provider:
@@ -9,7 +9,7 @@ provider:
 
 custom:
   stage: ${opt:stage, self:provider.stage}
-  product: rss-parser
+  product: feed-parser
   # DynamoDB variables
   dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-rss-feed-source
   dynamoDB_arn:
