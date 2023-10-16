@@ -21,8 +21,7 @@ table_name = os.environ.get('DYNAMODB_TABLE_NAME')
 
 def lambda_handler(event, context):
     # parse the RSS feed from the list below
-    #links = ['https://cointelegraph.com/rss', 'https://www.coindesk.com/arc/outboundfeeds/rss']
-    links = ['https://cointelegraph.com/rss/tag/bitcoin']
+    links = ['https://cointelegraph.com/rss/tag/bitcoin', 'https://cointelegraph.com/rss/tag/regulation']
     
     all_articles = []
     
