@@ -6,6 +6,11 @@ provider:
   runtime: python3.11
   region: us-east-1
   stage: dev
+  ecr:
+    images:
+      img:
+        path: ./
+        platform: linux/amd64
 
 custom:
   stage: ${opt:stage, self:provider.stage}
@@ -180,7 +185,7 @@ stepFunctions:
           ScrapeArticleData:
             Type: Task
             Resource:
-              Fn::GetAtt: [get-feed-and-article, Arn]
+              Fn::GetAtt: [get-artcile-selenium, Arn]
             End: true
 
 # Lambdas
@@ -209,6 +214,16 @@ functions:
         - requirements.txt
     timeout: 60
     role: LambdaDynamoDBRole
+  # Pull articles with Selenium
+  get-artcile-selenium:
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-scrape-article
+    description: Lambda wiht Selenium to scrape Article
+    environment:
+      DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
+    timeout: 60
+    memorySize: 2048
+    image:
+      name: img
 
 # Plugins
 plugins:
