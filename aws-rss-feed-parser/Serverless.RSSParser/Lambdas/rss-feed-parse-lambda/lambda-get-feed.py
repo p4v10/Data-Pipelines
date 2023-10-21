@@ -1,11 +1,12 @@
-from datetime import datetime
-import json
-import feedparser
 import re
 import os
-import boto3
+import json
 import uuid
+import boto3
 import logging
+import feedparser
+
+from datetime import datetime
 
 # initialize logger
 logger = logging.getLogger()
