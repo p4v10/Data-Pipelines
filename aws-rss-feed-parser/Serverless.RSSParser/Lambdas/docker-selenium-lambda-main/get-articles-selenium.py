@@ -40,7 +40,7 @@ def lambda_handler(event=None, context=None):
     options.add_argument("--remote-debugging-port=9222")
 
     with webdriver.Chrome(options=options, service=service) as chrome:
-        chrome.get("https://cointelegraph.com/news/singapore-court-authorizes-freeze-order-attached-wallets-soulbound-nft")
+        chrome.get("https://cointelegraph.com/magazine/australia-145m-exchange-scandal-bitget-4th-china-lifts-nft-ban-asia-express/")
 
         # scroll the page to mimic user
         for _ in range(5):
