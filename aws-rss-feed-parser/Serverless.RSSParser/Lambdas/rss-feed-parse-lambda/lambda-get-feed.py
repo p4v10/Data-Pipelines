@@ -91,7 +91,9 @@ def write_article_to_dynamoDB(article):
                 'rss_feed_subtitle': {'S': article['rss_feed_subtitle']},
                 'rss_feed_link': {'S': article['rss_feed_link']},
                 'date_added': {'S': article['date_added']},
-                'unique_id': {'S': article['unique_id']} 
+                'article_scraped': {'S': article['was_scraped']},
+                'raw_full_article': {'S': article['raw_full_article']},
+                'unique_id': {'S': article['unique_id']}
             }
         )
     except Exception as e:
@@ -125,7 +127,7 @@ def lambda_handler(event, context):
         articles = get_feed_info_and_articles(parsed)
 
         # filter articles based on the link pattern
-        pattern = re.compile(r'\.com/news/')
+        pattern = re.compile(r'\.com/magazine/|\.com/explained/')
         articles = filter_articles_by_link(articles, pattern)
 
         all_articles.extend(articles)
@@ -135,6 +137,8 @@ def lambda_handler(event, context):
         # check if article already was written to the DynamoDB
         if not article_exists(article['feed_article_id']):
             article['unique_id'] = str(uuid.uuid4())  # Generate a unique ID
+            article['was_scraped'] = str(0) # wasn't scraped yet
+            article['raw_full_article'] = str('') # column for the scraping
             article['date_added'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # Current date and time
             write_article_to_dynamoDB(article)
     
