@@ -23,9 +23,9 @@ table_name = os.environ.get('DYNAMODB_TABLE_NAME')
 # check if the article with the given ID exists in the DynamoDB table
 def article_exists(article_id):
     response = dynamoDB.query(
-        TableName=table_name,
-        KeyConditionExpression='feed_article_id = :id',
-        ExpressionAttributeValues={
+        TableName = table_name,
+        KeyConditionExpression = 'feed_article_id = :id',
+        ExpressionAttributeValues = {
             ':id': {'S': article_id}
         }
     )
@@ -79,8 +79,8 @@ def write_article_to_dynamoDB(article):
     try:
         # write the article to the DynamoDB table
         dynamoDB.put_item(
-            TableName=table_name,
-            Item={
+            TableName = table_name,
+            Item = {
                 'feed_article_id': {'S': article['feed_article_id']},
                 'feed_article_link': {'S': article['feed_article_link']},
                 'feed_article_published_date': {'S': article['feed_article_published_date']},
