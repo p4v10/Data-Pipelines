@@ -4,9 +4,14 @@ import time
 import boto3
 import logging
 
+
 from tempfile import mkdtemp
+from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, WebDriverException
+
+MAX_RETRIES = 3
 
 # initialize logger
 logger = logging.getLogger()
@@ -19,6 +24,9 @@ dynamoDB = boto3.client('dynamodb')
 
 # define the DynamoDB table name
 table_name = os.environ.get('DYNAMODB_TABLE_NAME')
+
+# today's date for reporting
+date_time = datetime.now()
 
 # get the news article from the RSS records in DynamoDB
 def get_dynamoDB_article_links():
@@ -71,10 +79,10 @@ def get_full_article_text(url):
     with webdriver.Chrome(options=options, service=service) as chrome:
         chrome.get(url)
 
-        # scroll the page to mimic user
-        for _ in range(5):
+        # scroll to the bottom of page, wait 3 seconds and repeat 3 times to mimic user
+        for _ in range(3):
             chrome.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(5)
+            time.sleep(3)
         
         # get full text from the article block
         article_element = chrome.find_element(By.CSS_SELECTOR, "article.post__article")
@@ -91,8 +99,12 @@ def get_full_article_text(url):
 
         # remove the text if matched by selector
         for selector in elements_to_remove:
-            element = article_element.find_element(By.CSS_SELECTOR, selector)
-            article_text = article_text.replace(element.text, '').strip()
+            try:
+                element = article_element.find_element(By.CSS_SELECTOR, selector)
+                article_text = article_text.replace(element.text, '').strip()
+            except NoSuchElementException:  # catch the error if the element is not found
+                logging.warning(f"Element with selector {selector}, for article: {url} not found. Skipping...")
+                continue  # Move to the next selector
 
         # string cleaning
         article_text = re.sub(r'Magazine.*', '', article_text, flags=re.DOTALL)
@@ -123,19 +135,21 @@ def update_dynamoDB(feed_article_id, unique_id, article_text):
 
 def lambda_handler(event, context):
 
-    # get links
+    # get links from dynamodb rss records
     links = get_dynamoDB_article_links()
     processed_count = 0
 
     for link, unique_id in links:
+        # gets the article text using function from
         article_text = get_full_article_text(link)
+        # stores scraped article back into dynamodb
         update_dynamoDB(link, unique_id, article_text)
         processed_count += 1
         logging.info(f'Processed already: {processed_count}')
 
-    logging.info(f'Final Processed: {processed_count}')
+    logging.info(f'Total Processed: {processed_count}')
     return {
         'statusCode': 200,
-        'body': f'Processed {processed_count} articles.'
+        'body': f'Total scraped and processed articles: {processed_count}. Date: {date_time}'
     }
     
