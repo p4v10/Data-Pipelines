@@ -76,43 +76,55 @@ def get_full_article_text(url):
     options.add_argument(f"--disk-cache-dir={mkdtemp()}")
     options.add_argument("--remote-debugging-port=9222")
 
-    with webdriver.Chrome(options=options, service=service) as chrome:
-        chrome.get(url)
+    retries = 0
+    article_text = None
+    while retries < MAX_RETRIES:
+        try:
+            with webdriver.Chrome(options=options, service=service) as chrome:
+                chrome.get(url)
 
-        # scroll to the bottom of page, wait 3 seconds and repeat 3 times to mimic user
-        for _ in range(3):
-            chrome.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(3)
+                # scroll to the bottom of the page, wait 3 seconds, and repeat 3 times to mimic a user
+                for _ in range(3):
+                    chrome.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                    time.sleep(3)
         
-        # get full text from the article block
-        article_element = chrome.find_element(By.CSS_SELECTOR, "article.post__article")
-        article_text = article_element.text
+                # get the full text from the article block
+                article_element = chrome.find_element(By.CSS_SELECTOR, "article.post__article")
+                article_text = article_element.text
 
-        # CSS selectors o the elements to be removed
-        elements_to_remove = [
-            ".post-meta", 
-            ".post-actions", 
-            ".post__socials-block", 
-            ".text-banner", 
-            ".post__block_nft"
-        ]
+                # CSS selectors of the elements to be removed
+                elements_to_remove = [
+                    ".post-meta", 
+                    ".post-actions", 
+                    ".post__socials-block", 
+                    ".text-banner", 
+                    ".post__block_nft"
+                ]
 
-        # remove the text if matched by selector
-        for selector in elements_to_remove:
-            try:
-                element = article_element.find_element(By.CSS_SELECTOR, selector)
-                article_text = article_text.replace(element.text, '').strip()
-            except NoSuchElementException:  # catch the error if the element is not found
-                logging.warning(f"Element with selector {selector}, for article: {url} not found. Skipping...")
-                continue  # Move to the next selector
+                # remove the text if matched by the selector
+                for selector in elements_to_remove:
+                    try:
+                        element = article_element.find_element(By.CSS_SELECTOR, selector)
+                        article_text = article_text.replace(element.text, '').strip()
+                    except NoSuchElementException:  # catch the error if the element is not found
+                        logging.warning(f"Element with selector {selector}, for article: {url} not found. Skipping...")
+                        continue  # move to the next selector
 
-        # string cleaning
-        article_text = re.sub(r'Magazine.*', '', article_text, flags=re.DOTALL)
-        article_text = re.sub(r'Related.*?\.', '', article_text, flags=re.DOTALL)
-        article_text = re.sub(r'(?<!\.)\n', '. ', article_text)
-        article_text = article_text.replace('NEWS.', '').replace('Ad.', '').replace('\n', ' ')
-        logging.info(f'Article Text: {article_text}')
-        return article_text
+                # string cleaning
+                article_text = re.sub(r'Magazine.*', '', article_text, flags=re.DOTALL)
+                article_text = re.sub(r'Related.*?\.', '', article_text, flags=re.DOTALL)
+                article_text = re.sub(r'(?<!\.)\n', '. ', article_text)
+                article_text = article_text.replace('NEWS.', '').replace('Ad.', '').replace('\n', ' ')
+                logging.info(f'Article Text: {article_text}')
+                
+                # if the scraping was successful, break out of the retry loop
+                break
+        
+        except WebDriverException as e:
+            logging.error(f"Error while processing URL {url}: {str(e)}. Retrying ({retries + 1}/{MAX_RETRIES})...")
+            retries += 1
+            
+    return article_text
 
 # update the dynamoDB table with the scraped data
 def update_dynamoDB(feed_article_id, unique_id, article_text):
@@ -135,21 +147,29 @@ def update_dynamoDB(feed_article_id, unique_id, article_text):
 
 def lambda_handler(event, context):
 
-    # get links from dynamodb rss records
+    # get links from dynamodb rss records L24
     links = get_dynamoDB_article_links()
     processed_count = 0
+    failed_articles = []
 
     for link, unique_id in links:
-        # gets the article text using function from
+        # gets the article text using function from L52
         article_text = get_full_article_text(link)
-        # stores scraped article back into dynamodb
-        update_dynamoDB(link, unique_id, article_text)
-        processed_count += 1
-        logging.info(f'Processed already: {processed_count}')
+        
+        if article_text:
+            # stores scraped article back into dynamodb L106
+            update_dynamoDB(link, unique_id, article_text)
+            processed_count += 1
+            logging.info(f'Processed already: {processed_count}')
+        else:
+            failed_articles.append(link)
 
     logging.info(f'Total Processed: {processed_count}')
+    if failed_articles:
+        logging.warning(f"Failed to scrape the following articles after {MAX_RETRIES} attempts: {', '.join(failed_articles)}")
+
     return {
         'statusCode': 200,
-        'body': f'Total scraped and processed articles: {processed_count}. Date: {date_time}'
+        'body': f'Total scraped and processed articles: {processed_count}. Date: {date_time}. Failed Articles: {len(failed_articles)}'
     }
     
