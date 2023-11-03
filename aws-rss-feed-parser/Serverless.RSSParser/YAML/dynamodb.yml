@@ -1,0 +1,100 @@
+Resources:
+  # DynamoDB Table for Raw RSS Feed
+  # we can remove columns from here and move it to a different script
+  RssFeedSourceTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: ${self:custom.dynamoDB_name}
+      AttributeDefinitions:
+        - AttributeName: feed_article_id
+          AttributeType: S
+        - AttributeName: feed_article_published_date
+          AttributeType: S
+        - AttributeName: feed_article_title
+          AttributeType: S
+        - AttributeName: feed_article_summary
+          AttributeType: S
+        - AttributeName: feed_article_link
+          AttributeType: S
+        - AttributeName: feed_article_author
+          AttributeType: S
+        - AttributeName: rss_feed_title
+          AttributeType: S
+        - AttributeName: rss_feed_link
+          AttributeType: S
+        - AttributeName: date_added
+          AttributeType: S
+        - AttributeName: unique_id
+          AttributeType: S
+      KeySchema:
+      # this can be updated using different elements
+        - AttributeName: feed_article_id
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: FeedArticleTitleIndex
+        KeySchema:
+        - AttributeName: feed_article_title
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: ArticleSummaryIndex
+        KeySchema:
+        - AttributeName: feed_article_summary
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: ArticleLinkIndex
+        KeySchema:
+        - AttributeName: feed_article_link
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: ArticleAuthorIndex
+        KeySchema:
+        - AttributeName: feed_article_author
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: RSSFeedTitleIndex
+        KeySchema:
+        - AttributeName: rss_feed_title
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: RSSFeedLinkIndex
+        KeySchema:
+        - AttributeName: rss_feed_link
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: DateAdded
+        KeySchema:
+        - AttributeName: date_added
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: UniqueID
+        KeySchema:
+        - AttributeName: feed_article_published_date
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
