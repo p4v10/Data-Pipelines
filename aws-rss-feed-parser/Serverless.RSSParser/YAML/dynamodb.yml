@@ -98,3 +98,72 @@ Resources:
           KeyType: RANGE
         Projection:
           ProjectionType: ALL
+
+# Table for summarized articles by llm
+  SummarizedArticlesLLM:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      TableName: ${self:custom.dynamoDB_summary_name}
+      AttributeDefinitions:
+        - AttributeName: feed_article_id
+          AttributeType: S
+        - AttributeName: feed_article_published_date
+          AttributeType: S
+        - AttributeName: feed_article_title
+          AttributeType: S
+        - AttributeName: feed_article_summary
+          AttributeType: S
+        - AttributeName: feed_article_link
+          AttributeType: S
+        - AttributeName: date_added
+          AttributeType: S
+        - AttributeName: unique_id
+          AttributeType: S
+      KeySchema:
+      # this can be updated using different elements
+        - AttributeName: feed_article_id
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+      - IndexName: FeedArticleTitleIndex
+        KeySchema:
+        - AttributeName: feed_article_title
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: ArticleSummaryIndex
+        KeySchema:
+        - AttributeName: feed_article_summary
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: ArticleLinkIndex
+        KeySchema:
+        - AttributeName: feed_article_link
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: DateAdded
+        KeySchema:
+        - AttributeName: date_added
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
+      - IndexName: UniqueID
+        KeySchema:
+        - AttributeName: feed_article_published_date
+          KeyType: HASH
+        - AttributeName: unique_id
+          KeyType: RANGE
+        Projection:
+          ProjectionType: ALL
