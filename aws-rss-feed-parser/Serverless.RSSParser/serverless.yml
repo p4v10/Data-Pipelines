@@ -19,6 +19,7 @@ custom:
   dynamoDB_name: ${self:service}-${self:custom.product}-${self:custom.stage}-rss-feed-source
   dynamoDB_arn:
     Fn::GetAtt: [RssFeedSourceTable, Arn]
+  dynamoDB_summary_name: ${self:service}-${self:custom.product}-${self:custom.stage}-summarized-articles
   # Step Function variables
   rss_pipeline_step_function_arn: 
     Fn::GetAtt: [RSSPipeline, Arn]
@@ -54,7 +55,7 @@ functions:
   # Pull articles with Selenium
   get-artcile-selenium:
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-scrape-article
-    description: Lambda wiht Selenium to scrape Article
+    description: Lambda with Selenium to scrape Articles
     environment:
       DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_name}
     timeout: 900
@@ -62,18 +63,19 @@ functions:
     role: LambdaDynamoDBRole
     image:
       name: img
-
-# Plugins
-plugins:
-  - serverless-python-requirements
-  - serverless-step-functions
-
-# Resources
-resources:
-    - Resources:
-    # All the resources
-    - ${file(./YAML/dynamodb.yml)}
-    - ${file(./YAML/iam.yml)}
+  # Summarize articles into a 3-4 days summary
+  summarize-llm:
+    handler: Lambdas/article-summarize-llm/summarize-llm.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-summarize-llm
+    description: Lambda to pull articles for the time period and summarize into new DynamoDB
+    environment:
+      DYNAMODB_TABLE_NAME: ${self:custom.dynamoDB_summary_name}
+    package:
+      include:
+        - Lambdas/article-summarize-llm/
+        - requirements.txt
+    timeout: 60
+    role: LambdaDynamoDBRole
 
 stepFunctions:
   stateMachines:
@@ -94,3 +96,16 @@ stepFunctions:
             Resource:
               Fn::GetAtt: [get-artcile-selenium, Arn]
             End: true
+
+
+# Plugins
+plugins:
+  - serverless-python-requirements
+  - serverless-step-functions
+
+# Resources
+resources:
+    - Resources:
+    # All the resources
+    - ${file(./YAML/dynamodb.yml)}
+    - ${file(./YAML/iam.yml)}
