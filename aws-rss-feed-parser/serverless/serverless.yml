@@ -52,6 +52,17 @@ functions:
         - requirements.txt
     timeout: 60
     role: LambdaDynamoDBRole
+  # Gets BTC Price data from API
+  get-btc-raw-data:
+    handler: Lambdas/get-crypto-data/get-btc-data.lambda_handler
+    name: ${self:service}-${self:custom.product}-${self:custom.stage}-get-btc-raw
+    description: Lambda to BTC API data
+    environment:
+      COINMARKETCAP_API_KEY: 'd0546da8-d445-472a-b36c-cce36e67c63d'
+    timeout: 60
+    role: LambdaDynamoDBRole
+    layers:
+      - arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python311:10
   # Pull articles with Selenium
   get-artcile-selenium:
     name: ${self:service}-${self:custom.product}-${self:custom.stage}-scrape-article
